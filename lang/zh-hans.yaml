@@ -1,0 +1,21 @@
+lang:
+  list: |
+    当前可用语言：
+    {{
+      "\n".join([
+        (
+          f"> {lang}"
+          if lang == "zh-hans"
+          else f"- {lang}"
+        )
+        for lang in langs
+      ])
+    }}
+  set: "已成功设置语言为 {{ lang }}"
+
+quick-math:
+  question: "{{ a }} {{ op }} {{ b }} = ?"
+  correct: |
+    回答正确！
+    你得到了{{ got }}点credit！
+    你现在共有{{ total }}点credit！

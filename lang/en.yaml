@@ -1,0 +1,21 @@
+lang:
+  list: |
+    Available langs:
+    {{
+      "\n".join([
+        (
+          f"> {lang}"
+          if lang == "zh-hans"
+          else f"- {lang}"
+        )
+        for lang in langs
+      ])
+    }}
+  set: "Set lang to {{ lang }} successfully!"
+
+quick-math:
+  question: "{{ a }} {{ op }} {{ b }} = ?"
+  correct: |
+    Bingo!
+    You got {{ got }} credit!
+    Now you have {{ total }} credit{{ "s" if total > 1 else "" }}!

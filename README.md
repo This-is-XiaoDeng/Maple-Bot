@@ -1,0 +1,1 @@
+![Maple-Bot](https://socialify.git.ci/ITCraftDevelopmentTeam/Maple-Bot/image?description=1&descriptionEditable=There%20is%20no%20description%20yet.&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2FITCraftDevelopmentTeam%2FMaple-Bot%2Fmaster%2Flogo.svg&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Light)
