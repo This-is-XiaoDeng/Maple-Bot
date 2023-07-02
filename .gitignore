@@ -4,3 +4,4 @@ test
 go-cqhttp
 qsign
 .env
+.venv
