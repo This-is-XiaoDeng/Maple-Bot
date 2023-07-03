@@ -2,12 +2,12 @@ __all__ = ["JsonDict"]
 
 import os
 import json
-from typing import Type, Any
+from typing import Any, Callable
 
 
-def load_json(path: str, type_: Type = dict) -> Any:
+def load_json(path: str, factory: Callable[[], Any] = dict) -> Any:
     if not os.path.exists(path):
-        return type_()
+        return factory()
     with open(path, "r", encoding="utf-8") as file:
         return json.load(file)
 
@@ -16,23 +16,32 @@ def dump_json(obj: Any, path: str) -> None:
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
     with open(path, "w", encoding="utf-8") as file:
-        json.dump(obj, file)
+        json.dump(obj, file, ensure_ascii=False)
 
 
 class JsonDict:
-    def __init__(self, path: str, default: Any = 0) -> None:
+    def __init__(self, path: str, factory: Callable[[], Any] = int) -> None:
         self.path = os.path.join("data", path)
         self.data = load_json(self.path)
         assert isinstance(self.data, dict)
-        self.default = default
+        self.factory = factory
 
     def __getitem__(self, key: str) -> Any:
-        return self.data.get(key, self.default)
+        if key not in self.data:
+            self.data[key] = self.factory()
+            self.save()
+        return self.data[key]
 
     def __setitem__(self, key: str, value: Any) -> None:
         self.data[key] = value
-        dump_json(self.data, self.path)
+        self.save()
 
     def __deliem__(self, key: str) -> None:
         del self.data[key]
+        self.save()
+
+    def save(self) -> None:
         dump_json(self.data, self.path)
+
+    def __str__(self) -> str:
+        return f"JsonDict{self.data}"

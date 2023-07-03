@@ -16,7 +16,7 @@ Tree: TypeAlias = Dict[str, Union["Tree", str]]
 LangTag = Literal["en", "zh-hans"] # TODO: 与`./lang/`文件夹下语言文件同步
 
 langs: Dict[LangTag, Tree] = {}
-lang_use = JsonDict("lang_use.json", "zh-hans")
+lang_use = JsonDict("lang_use.json", lambda: "zh-hans")
 
 
 for filename in os.listdir("lang"):
@@ -43,7 +43,7 @@ def text(__lang: LangTag | UserID | MessageEvent, __key: str, **kwargs: Any) -> 
     try:
         data = gets(langs[lang], key)
     except KeyError:
-        lang = lang_use.default
+        lang = lang_use.factory()
         data = gets(langs[lang], key)
 
     def repl(match_: Match[str]) -> str:
