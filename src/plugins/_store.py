@@ -20,7 +20,7 @@ def dump_json(obj: Any, path: str) -> None:
 
 
 class JsonDict:
-    def __init__(self, path: str, default=0):
+    def __init__(self, path: str, default: Any = 0) -> None:
         self.path = os.path.join("data", path)
         self.data = load_json(self.path)
         assert isinstance(self.data, dict)

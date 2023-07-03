@@ -1,8 +1,9 @@
 import asyncio
 from random import randint, choice
 from datetime import timedelta
+from typing import cast
 
-from sympy import simplify
+from sympy import simplify, Rational
 
 from nonebot import on_command, on_regex
 from nonebot.matcher import Matcher
@@ -15,7 +16,7 @@ from ._rule import group
 
 
 @on_command("quick-math", aliases={"qm"}).handle()
-async def _(matcher: Matcher, event: GroupMessageEvent):
+async def _(event: GroupMessageEvent):
     user_id = str(event.user_id)
     a = randint(1, 10)
     b = randint(1, 10)
@@ -27,10 +28,10 @@ async def _(matcher: Matcher, event: GroupMessageEvent):
         "quick-math.question",
         a=a, op=op, b=b
     )))["message_id"]
-    ans = simplify(f"{a}{op}{b}")
+    ans = cast(Rational, simplify(f"{a}{op}{b}"))
     if ans.q != 1:
-        ans = f"{ans.p}\s*?[/÷]\s*?{ans.q}"
-    ans = f"^\s*?{ans}\s*?$"
+        ans = rf"{ans.p}\s*?[/÷]\s*?{ans.q}"
+    ans = rf"^\s*?{ans}\s*?$"
 
     @on_regex(
         ans,

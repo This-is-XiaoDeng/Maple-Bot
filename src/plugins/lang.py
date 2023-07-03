@@ -19,3 +19,5 @@ async def _(matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()):
         case lang if lang in langs:
             _lang.lang_use[user_id] = lang
             await matcher.send(text(user_id, "lang.set", lang=lang))
+        case _:
+            pass
