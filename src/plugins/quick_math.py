@@ -16,7 +16,7 @@ from ._rule import group
 
 
 @on_command("quick-math", aliases={"qm"}).handle()
-async def _(event: GroupMessageEvent):
+async def quick_math_handle(event: GroupMessageEvent):
     user_id = str(event.user_id)
     a = randint(1, 10)
     b = randint(1, 10)
@@ -28,18 +28,18 @@ async def _(event: GroupMessageEvent):
         "quick-math.question",
         a=a, op=op, b=b
     )))["message_id"]
-    ans = cast(Rational, simplify(f"{a}{op}{b}"))
-    if ans.q != 1:
-        ans = rf"{ans.p}\s*?[/÷]\s*?{ans.q}"
-    ans = rf"^\s*?{ans}\s*?$"
+    answer = cast(Rational, simplify(f"{a}{op}{b}"))
+    if answer.q != 1:
+        answer = rf"{answer.p}\s*?[/÷]\s*?{answer.q}"
+    answer = rf"^\s*?{answer}\s*?$"
 
     @on_regex(
-        ans,
+        answer,
         rule=group(event.group_id),
         temp=True,
         expire_time=timedelta(seconds=10)
     ).handle()
-    async def _(matcher: Matcher):
+    async def quick_math_answer_handle(matcher: Matcher):
         credit = randint(1, 3)
         credits[user_id] += credit
         await matcher.send(text(

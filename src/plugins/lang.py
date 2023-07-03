@@ -11,7 +11,11 @@ langs = _lang.langs.keys()
 
 
 @on_command("lang").handle()
-async def _(matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()):
+async def lang_handle(
+    matcher: Matcher,
+    event: MessageEvent,
+    arg: Message = CommandArg()
+):
     user_id = str(event.user_id)
     match str(arg).lower().strip():
         case  "-l" | "list":
