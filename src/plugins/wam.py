@@ -39,7 +39,7 @@ async def at_handle(event: GroupMessageEvent) -> None:
 
 
 @on_command("wam").handle()
-async def lang_handle(event: GroupMessageEvent) -> None:
+async def wam_handle(event: GroupMessageEvent) -> None:
     user_id = str(event.user_id)
     group_id = str(event.group_id)
     history = JsonDict(os.path.join("wam", f"{group_id}.json"), list)
