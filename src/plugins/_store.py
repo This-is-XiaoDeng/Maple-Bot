@@ -5,9 +5,9 @@ import json
 from typing import Any, Callable
 
 
-def load_json(path: str, factory: Callable[[], Any] = dict) -> Any:
+def load_json(path: str, default_factory: Callable[[], Any] = dict) -> Any:
     if not os.path.exists(path):
-        return factory()
+        return default_factory()
     with open(path, "r", encoding="utf-8") as file:
         return json.load(file)
 
@@ -20,15 +20,19 @@ def dump_json(obj: Any, path: str) -> None:
 
 
 class JsonDict:
-    def __init__(self, path: str, factory: Callable[[], Any] = int) -> None:
+    def __init__(
+        self,
+        path: str,
+        default_factory: Callable[[], Any] = int
+    ) -> None:
         self.path = os.path.join("data", path)
         self.data = load_json(self.path)
         assert isinstance(self.data, dict)
-        self.factory = factory
+        self.default_factory = default_factory
 
     def __getitem__(self, key: str) -> Any:
         if key not in self.data:
-            self.data[key] = self.factory()
+            self.data[key] = self.default_factory()
             self.save()
         return self.data[key]
 

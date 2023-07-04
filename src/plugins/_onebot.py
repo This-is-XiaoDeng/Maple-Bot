@@ -4,6 +4,8 @@ from typing import List, Dict
 
 from nonebot import get_bot
 from nonebot.adapters import Message, MessageSegment, MessageTemplate
+from nonebot.adapters.onebot.v11 import escape
+
 
 
 ID = str | int
@@ -45,7 +47,7 @@ def custom_forward_node(
         "data": {
             "name": name,
             "uin": str(uin),
-            "content": content
+            "content": escape(str(content), escape_comma=False)
         }
     }
 
