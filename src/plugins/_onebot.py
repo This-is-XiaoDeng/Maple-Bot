@@ -7,9 +7,7 @@ from nonebot.adapters import Message, MessageSegment, MessageTemplate
 from nonebot.adapters.onebot.v11 import escape
 
 
-
-ID = str | int
-UserID = GroupID = MessageID = ID
+UserID = GroupID = MessageID = str | int
 AnyMessage = str | Message | MessageSegment | MessageTemplate
 ForwardNode = Dict[str, str | Dict[str, AnyMessage | Dict[str, AnyMessage]]]
 
