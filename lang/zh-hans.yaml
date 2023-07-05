@@ -17,5 +17,28 @@ quick-math:
   question: "{{ a }} {{ op }} {{ b }} = ?"
   correct: |
     回答正确！
-    你得到了{{ got }}点credit！
-    你现在共有{{ total }}点credit！
+    恭喜你获得了{{ got }}点credit！
+    你当前拥有{{ total }}点credit！
+
+hot:
+  rank: |
+    {{
+      "\n".join([
+        f"> {index + 1}. {group_name}: {count}"
+        if group_id == event.group_id else
+        f"- {index + 1}. {group_name}: {count}"
+        for index, (group_name, count, group_id) in enumerate(ranks[:11])
+      ]) if ranks else "没有群聊发言呢。。。"
+    }}
+  10min: |
+    近十分钟群聊热度排行：
+    {{ text("hot.rank") }}
+  hour: |
+    近一小时群聊热度排行：
+    {{ text("hot.rank") }}
+  day: |
+    今日群聊热度排行：
+    {{ text("hot.rank") }}
+  total: |
+    总群聊热度排行：
+    {{ text("hot.rank") }}

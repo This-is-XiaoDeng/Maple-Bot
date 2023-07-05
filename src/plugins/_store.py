@@ -19,33 +19,28 @@ def dump_json(obj: Any, path: str) -> None:
         json.dump(obj, file, ensure_ascii=False)
 
 
-class JsonDict(Generic[T]):
+class JsonDict(dict, Generic[T]):
     def __init__(
         self,
         path: str,
         default_factory: Callable[[], T] = int
     ) -> None:
         self.path = os.path.join("data", path)
-        self.data = load_json(self.path)
-        assert isinstance(self.data, dict)
+        data = load_json(self.path)
+        assert isinstance(data, dict)
+        super().__init__(data)
         self.default_factory = default_factory
 
     def __getitem__(self, key: str) -> T:
-        if key not in self.data:
-            self.data[key] = self.default_factory()
-            self.save()
-        return self.data[key]
-
-    def __setitem__(self, key: str, value: T) -> None:
-        self.data[key] = value
-        self.save()
-
-    def __deliem__(self, key: str) -> None:
-        del self.data[key]
-        self.save()
+        if key not in self.keys():
+            super().__setitem__(key, self.default_factory())
+        return super().__getitem__(key)
 
     def save(self) -> None:
-        dump_json(self.data, self.path)
+        dump_json(self, self.path)
 
     def __str__(self) -> str:
-        return f"JsonDict{self.data}"
+        return f"JsonDict at '{self.path}':\n{self}"
+
+    def __del__(self) -> None:
+        self.save()

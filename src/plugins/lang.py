@@ -24,4 +24,4 @@ async def lang_handle(
             _lang.lang_use[user_id] = lang
             await matcher.send(text(user_id, "lang.set", lang=lang))
         case _:
-            pass
+            await matcher.finish()

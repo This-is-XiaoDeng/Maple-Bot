@@ -25,8 +25,7 @@ async def quick_math_handle(event: GroupMessageEvent) -> None:
     if op == "**":
         b = randint(0, 3)
     message_id = await send_group_msg(group_id, text(
-        user_id,
-        "quick-math.question",
+        user_id, "quick-math.question",
         a=a, op=op, b=b
     ))
     answer = cast(Rational, simplify(f"{a}{op}{b}"))
@@ -44,10 +43,8 @@ async def quick_math_handle(event: GroupMessageEvent) -> None:
         credit = randint(1, 3)
         credits[user_id] += credit
         await matcher.send(text(
-            user_id,
-            "quick-math.correct",
-            got=credit,
-            total=credits[user_id]
+            user_id, "quick-math.correct",
+            got=credit, total=credits[user_id]
         ), at_sender=True)
     await asyncio.sleep(10)
     await delete_msg(message_id)

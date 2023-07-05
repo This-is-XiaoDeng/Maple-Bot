@@ -36,7 +36,10 @@ def message_to_node(message: MessageType) -> Tuple[MessageID, MessageNode]:
 
 @on_regex(AT_PATTERN).handle()
 async def at_handle(event: GroupMessageEvent) -> None:
-    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+    history = JsonDict(
+        os.path.join("wam", f"{event.group_id}.json"),
+        dict[str, MessageNode | List[MessageID]]
+    )
     messages = await get_group_msg_history(event.group_id)
     messages = messages[-(1 + PREVIOUS_MESSAGE_COUNT):-1]
     messages = list(map(message_to_node, messages))
@@ -54,8 +57,8 @@ async def at_handle(event: GroupMessageEvent) -> None:
     if "all" in target_ids:
         target_ids = {"all"}
     for target_id in target_ids:
-        cast(Dict[str, List[MessageID]], history[target_id])[
-            str(event.message_id)] = message_ids
+        cast(Dict[str, List[MessageID]],
+             history[target_id])[str(event.message_id)] = message_ids
     history.save()
 
     message_count = NEXT_MESSAGE_COUNT
@@ -68,13 +71,13 @@ async def at_handle(event: GroupMessageEvent) -> None:
             "user_id": sub_event.user_id,
             "content": sub_event.raw_message
         }
-        history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+        history = JsonDict(os.path.join("wam", f"{event.group_id}.json"),
+                           dict[str, MessageNode | List[MessageID]])
         cast(Dict[str, MessageNode], history["nodes"])[
             str(sub_event.message_id)] = node
         for target_id in target_ids:
             cast(Dict[str, List[MessageID]], history[target_id])[
                 str(event.message_id)].append(sub_event.message_id)
-        history.save()
         nonlocal message_count
         message_count -= 1
         if message_count == 0:
@@ -86,7 +89,8 @@ async def who_at_me_handle(event: GroupMessageEvent) -> None:
     def get_node(message_id: MessageID) -> MessageNode:
         return cast(Dict[str, MessageNode], history["nodes"])[str(message_id)]
 
-    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"),
+                       dict[str, MessageNode | List[MessageID]])
     messages = cast(List[List[MessageID]], list(
         history[str(event.user_id)].values()))
     messages += list(filter(
@@ -106,19 +110,18 @@ async def who_at_me_handle(event: GroupMessageEvent) -> None:
 
     await send_group_forward_msg(event.group_id, [
         await custom_forward_node(
-            time=(node := get_node(
-                message_ids[PREVIOUS_MESSAGE_COUNT]))["time"],
+            time=(node := get_node(ids[PREVIOUS_MESSAGE_COUNT]))["time"],
             user_id=node["user_id"],
             group_id=event.group_id,
             content=[
                 await custom_forward_node(
-                    time=(node := get_node(message_id))["time"],
+                    time=(node := get_node(id))["time"],
                     user_id=node["user_id"],
                     group_id=event.group_id,
                     content=await subs(cast(str, node["content"]))
                 )
-                for message_id in message_ids
+                for id in ids
             ]
         )
-        for message_ids in messages
+        for ids in messages
     ])

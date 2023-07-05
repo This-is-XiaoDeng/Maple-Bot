@@ -1,5 +1,7 @@
 import os
 import re
+from functools import partial
+from traceback import format_exc
 from typing import cast, Dict, Any, Match, Union, TypeAlias, Literal
 
 import yaml
@@ -24,7 +26,11 @@ for filename in os.listdir("lang"):
         langs[lang] = yaml.safe_load(file)
 
 
-def text(__lang: LangTag | UserID | MessageEvent, __key: str, **kwargs: Any) -> str:
+def text(
+    __lang: LangTag | UserID | MessageEvent,
+    __key: str,
+    **kwargs: Any
+) -> str:
     lang, key = __lang, __key
     if isinstance(lang, MessageEvent):
         lang = lang.user_id
@@ -45,11 +51,13 @@ def text(__lang: LangTag | UserID | MessageEvent, __key: str, **kwargs: Any) -> 
         data = gets(langs[cast(LangTag, lang)], key)
 
     def repl(match: Match[str]) -> str:
-        matched = match.group()
-        expr = matched[2:-2]
+        expr = match.group()[2:-2]
+        globals_ = kwargs.copy()
+        globals_["text"] = partial(text, lang, **kwargs)
         try:
-            return str(eval(expr.strip(), {"__builtins__": None}, kwargs))
-        except Exception:
-            return matched
+            return str(eval(expr.strip(), globals_))
+        except:
+            return (f"{{{{{expr}}}}}"
+                    f"\n\n{format_exc()}")
 
     return re.sub("{{.*?}}", repl, data, flags=re.DOTALL)

@@ -8,7 +8,13 @@ from typing import cast
 UserID = GroupID = MessageID = str | int
 AnyMessage = str | Message | MessageSegment | MessageTemplate
 MessageType = Dict[str, int | str | Dict[str, int | str]]
-ForwardNode = Dict[str, str | Dict[str, str | int | AnyMessage | List["ForwardNode"]]]
+ForwardNode = Dict[
+    str,
+    str | Dict[
+        str,
+        str | int | AnyMessage | List["ForwardNode"]
+    ]
+]
 
 
 async def send_group_msg(group_id: GroupID, message: AnyMessage) -> MessageID:
@@ -22,6 +28,16 @@ async def delete_msg(message_id: MessageID) -> None:
     await get_bot().delete_msg(message_id=int(message_id))
 
 
+async def get_group_info(
+    group_id: GroupID,
+    no_cache: bool =False
+) -> Dict[str, str | int]:
+    return await get_bot().get_group_info(
+        group_id=int(group_id),
+        no_cache=no_cache
+    )
+
+
 async def get_group_member_info(
     group_id: GroupID,
     user_id: UserID,
@@ -32,6 +48,7 @@ async def get_group_member_info(
         user_id=int(user_id),
         no_cache=no_cache
     )
+
 
 async def get_stranger_info(
     user_id: UserID,
@@ -65,7 +82,7 @@ async def custom_forward_node(
     return node
 
 
-def referencing_forward_node(id: MessageID)-> ForwardNode:
+def referencing_forward_node(id: MessageID) -> ForwardNode:
     return {
         "type": "node",
         "data": {
@@ -96,11 +113,17 @@ async def get_group_msg_history(
 
 async def get_user_name(
     user_id: UserID,
-    group_id: Optional[GroupID] = None
+    group_id: Optional[GroupID] = None,
+    no_cache: bool = False
 ) -> str:
     if group_id is None:
-        return (await get_stranger_info(user_id=int(user_id)))["nickname"]
+        return (await get_stranger_info(int(user_id), no_cache))["nickname"]
     else:
-        info = await get_group_member_info(group_id, user_id)
+        info = await get_group_member_info(group_id, user_id, no_cache)
         return info["card"] or info["nickname"]
 
+
+async def get_group_name(
+    group_id: GroupID
+) -> str:
+    return cast(str, (await get_group_info(group_id))["group_name"])
