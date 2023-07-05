@@ -19,3 +19,26 @@ quick-math:
     Bingo!
     You got {{ got }} credit!
     Now you have {{ total }} credit{{ "s" if total > 1 else "" }}!
+
+hot:
+  rank: |
+    {{
+      "\n".join([
+        f"> {index + 1}. {group_name}: {count}"
+        if group_id == event.group_id else
+        f"- {index + 1}. {group_name}: {count}"
+        for index, (group_name, count, group_id) in enumerate(ranks[:11])
+      ]) if ranks else "No message yet..."
+    }}
+  10min: |
+    10-min Hot Group Rank:
+    {{ text("hot.rank") }}
+  hour: |
+    1-hour Hot Group Rank:
+    {{ text("hot.rank") }}
+  day: |
+    Today Hot Group Rank:
+    {{ text("hot.rank") }}
+  total: |
+    Total Hot Group Rank:
+    {{ text("hot.rank") }}
