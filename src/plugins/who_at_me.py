@@ -22,6 +22,10 @@ CaveNode = Dict[str, str | int]
 
 AT_PATTERN = r"\[CQ:at,qq=(\d+|all)\]"
 
+PREVIOUS_MESSAGE_COUNT = 7
+NEXT_MESSAGE_COUNT = 7
+assert PREVIOUS_MESSAGE_COUNT <= 18
+
 
 def message_to_node(message: MessageType) -> CaveNode:
     return {
@@ -34,7 +38,7 @@ def message_to_node(message: MessageType) -> CaveNode:
 @on_regex(AT_PATTERN).handle()
 async def at_handle(event: GroupMessageEvent) -> None:
     messages = await get_group_msg_history(event.group_id)
-    messages = messages[-8:-1]
+    messages = messages[-(1 + PREVIOUS_MESSAGE_COUNT):-1]
     messages = list(map(message_to_node, messages))
     node: CaveNode = {
         "time": event.time,
@@ -51,7 +55,7 @@ async def at_handle(event: GroupMessageEvent) -> None:
             str(event.message_id)] = messages
     history.save()
 
-    message_count = 7
+    message_count = NEXT_MESSAGE_COUNT
     matcher = on_message(group(event.group_id))
 
     @matcher.handle()
@@ -77,10 +81,11 @@ async def who_at_me_handle(event: GroupMessageEvent) -> None:
     messages = cast(List[List[CaveNode]],
                     list(history[str(event.user_id)].values()))
     messages += list(filter(
-        lambda node: node[7]["user_id"] != event.user_id,
+        lambda node: node[PREVIOUS_MESSAGE_COUNT]["user_id"] != event.user_id,
         cast(List[List[CaveNode]], history["all"].values())
     ))
-    messages.sort(key=lambda node: node[7]["time"], reverse=True)
+    messages.sort(
+        key=lambda node: node[PREVIOUS_MESSAGE_COUNT]["time"], reverse=True)
 
     async def subs(content: str) -> str:
         for matched in re.findall(AT_PATTERN, content):
