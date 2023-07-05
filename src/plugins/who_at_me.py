@@ -3,7 +3,6 @@ import re
 from typing import cast, List, Dict
 
 from nonebot import on_command, on_regex, on_message
-from nonebot.typing import T_State
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 
 from ._rule import group
