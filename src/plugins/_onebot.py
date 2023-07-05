@@ -8,7 +8,7 @@ from typing import cast
 UserID = GroupID = MessageID = str | int
 AnyMessage = str | Message | MessageSegment | MessageTemplate
 MessageType = Dict[str, int | str | Dict[str, int | str]]
-ForwardNode = Dict[str, str | Dict[str, AnyMessage | Dict[str, AnyMessage] | List["ForwardNode"]]]
+ForwardNode = Dict[str, str | Dict[str, str | int | AnyMessage | List["ForwardNode"]]]
 
 
 async def send_group_msg(group_id: GroupID, message: AnyMessage) -> MessageID:
@@ -47,11 +47,12 @@ async def custom_forward_node(
     user_id: UserID,
     content: AnyMessage | List[ForwardNode],
     name: Optional[str] = None,
-    group_id: Optional[GroupID] = None
+    group_id: Optional[GroupID] = None,
+    time: Optional[int | str] = None
 ) -> ForwardNode:
     if name is None:
         name = await get_user_name(user_id, group_id)
-    return {
+    node: ForwardNode = {
         "type": "node",
         "data": {
             "name": name,
@@ -59,6 +60,9 @@ async def custom_forward_node(
             "content": content
         }
     }
+    if time is not None:
+        cast(Dict[str, int | str], node["data"])["time"] = int(time)
+    return node
 
 
 def referencing_forward_node(id: MessageID)-> ForwardNode:

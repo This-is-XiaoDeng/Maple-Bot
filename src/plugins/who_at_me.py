@@ -92,10 +92,12 @@ async def who_at_me_handle(event: GroupMessageEvent) -> None:
 
     await send_group_forward_msg(event.group_id, [
         await custom_forward_node(
+            time=nodes[7]["time"],
             user_id=nodes[7]["user_id"],
             group_id=event.group_id,
             content=[
                 await custom_forward_node(
+                    time=cast(Dict[str, str], node)["time"],
                     user_id=cast(Dict[str, str], node)["user_id"],
                     group_id=event.group_id,
                     content=await subs(cast(Dict[str, str], node)["content"])
