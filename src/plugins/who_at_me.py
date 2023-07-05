@@ -10,7 +10,6 @@ from ._store import JsonDict
 from ._onebot import (
     MessageType,
     send_group_forward_msg,
-    get_group_member_info,
     custom_forward_node,
     get_group_msg_history,
     get_user_name
