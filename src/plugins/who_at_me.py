@@ -1,6 +1,6 @@
 import os
 import re
-from typing import cast, List, Dict
+from typing import cast, List, Dict, Tuple
 
 from nonebot import on_command, on_regex, on_message
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
@@ -8,6 +8,7 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from ._rule import group
 from ._store import JsonDict
 from ._onebot import (
+    MessageID,
     MessageType,
     send_group_forward_msg,
     custom_forward_node,
@@ -25,32 +26,36 @@ NEXT_MESSAGE_COUNT = 7
 assert PREVIOUS_MESSAGE_COUNT <= 18
 
 
-def message_to_node(message: MessageType) -> MessageNode:
-    return {
+def message_to_node(message: MessageType) -> Tuple[MessageID, MessageNode]:
+    return cast(MessageID, message["message_id"]), {
         "time": cast(int, message["time"]),
         "user_id": cast(str, message["user_id"]),
-        "content": cast(str, message["message"])
+        "content": cast(str, message["raw_message"])
     }
 
 
 @on_regex(AT_PATTERN).handle()
 async def at_handle(event: GroupMessageEvent) -> None:
+    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
     messages = await get_group_msg_history(event.group_id)
     messages = messages[-(1 + PREVIOUS_MESSAGE_COUNT):-1]
     messages = list(map(message_to_node, messages))
-    node: MessageNode = {
+    message_ids: List[MessageID] = []
+    for message_id, node in messages:
+        message_ids.append(message_id)
+        cast(Dict[str, MessageNode], history["nodes"])[str(message_id)] = node
+    message_ids.append(event.message_id)
+    cast(Dict[str, MessageNode], history["nodes"])[str(event.message_id)] = {
         "time": event.time,
         "user_id": event.user_id,
         "content": event.raw_message
     }
-    target_ids = set(re.findall(AT_PATTERN, cast(str, node["content"])))
-    messages.append(node)
+    target_ids = set(re.findall(AT_PATTERN, cast(str, event.raw_message)))
     if "all" in target_ids:
         target_ids = {"all"}
-    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
     for target_id in target_ids:
-        cast(Dict[str, List[MessageNode]], history[target_id])[
-            str(event.message_id)] = messages
+        cast(Dict[str, List[MessageID]], history[target_id])[
+            str(event.message_id)] = message_ids
     history.save()
 
     message_count = NEXT_MESSAGE_COUNT
@@ -64,8 +69,11 @@ async def at_handle(event: GroupMessageEvent) -> None:
             "content": sub_event.raw_message
         }
         history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+        cast(Dict[str, MessageNode], history["nodes"])[
+            str(sub_event.message_id)] = node
         for target_id in target_ids:
-            cast(Dict, history[target_id])[str(event.message_id)].append(node)
+            cast(Dict[str, List[MessageID]], history[target_id])[
+                str(event.message_id)].append(sub_event.message_id)
         history.save()
         nonlocal message_count
         message_count -= 1
@@ -75,15 +83,18 @@ async def at_handle(event: GroupMessageEvent) -> None:
 
 @on_command("who-at-me", aliases={"wam"}).handle()
 async def who_at_me_handle(event: GroupMessageEvent) -> None:
+    def get_node(message_id: MessageID) -> MessageNode:
+        return cast(Dict[str, MessageNode], history["nodes"])[str(message_id)]
+
     history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
-    messages = cast(List[List[MessageNode]],
-                    list(history[str(event.user_id)].values()))
+    messages = cast(List[List[MessageID]], list(
+        history[str(event.user_id)].values()))
     messages += list(filter(
-        lambda node: node[PREVIOUS_MESSAGE_COUNT]["user_id"] != event.user_id,
-        cast(List[List[MessageNode]], history["all"].values())
-    ))
-    messages.sort(
-        key=lambda node: node[PREVIOUS_MESSAGE_COUNT]["time"], reverse=True)
+        lambda node:
+            get_node(node[PREVIOUS_MESSAGE_COUNT])["user_id"] != event.user_id,
+        cast(List[List[MessageID]], history["all"].values())))
+    messages.sort(key=lambda node: get_node(
+        node[PREVIOUS_MESSAGE_COUNT])["time"], reverse=True)
 
     async def subs(content: str) -> str:
         for matched in re.findall(AT_PATTERN, content):
@@ -95,18 +106,19 @@ async def who_at_me_handle(event: GroupMessageEvent) -> None:
 
     await send_group_forward_msg(event.group_id, [
         await custom_forward_node(
-            time=nodes[PREVIOUS_MESSAGE_COUNT]["time"],
-            user_id=nodes[PREVIOUS_MESSAGE_COUNT]["user_id"],
+            time=(node := get_node(
+                message_ids[PREVIOUS_MESSAGE_COUNT]))["time"],
+            user_id=node["user_id"],
             group_id=event.group_id,
             content=[
                 await custom_forward_node(
-                    time=cast(Dict[str, str], node)["time"],
-                    user_id=cast(Dict[str, str], node)["user_id"],
+                    time=(node := get_node(message_id))["time"],
+                    user_id=node["user_id"],
                     group_id=event.group_id,
-                    content=await subs(cast(Dict[str, str], node)["content"])
+                    content=await subs(cast(str, node["content"]))
                 )
-                for node in nodes
+                for message_id in message_ids
             ]
         )
-        for nodes in messages
+        for message_ids in messages
     ])
