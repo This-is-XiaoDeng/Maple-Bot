@@ -18,7 +18,7 @@ from ._onebot import (
 )
 
 
-CaveNode = Dict[str, str | int]
+MessageNode = Dict[str, str | int]
 
 AT_PATTERN = r"\[CQ:at,qq=(\d+|all)\]"
 
@@ -27,7 +27,7 @@ NEXT_MESSAGE_COUNT = 7
 assert PREVIOUS_MESSAGE_COUNT <= 18
 
 
-def message_to_node(message: MessageType) -> CaveNode:
+def message_to_node(message: MessageType) -> MessageNode:
     return {
         "time": cast(int, message["time"]),
         "user_id": cast(str, message["user_id"]),
@@ -40,7 +40,7 @@ async def at_handle(event: GroupMessageEvent) -> None:
     messages = await get_group_msg_history(event.group_id)
     messages = messages[-(1 + PREVIOUS_MESSAGE_COUNT):-1]
     messages = list(map(message_to_node, messages))
-    node: CaveNode = {
+    node: MessageNode = {
         "time": event.time,
         "user_id": event.user_id,
         "content": event.raw_message
@@ -51,7 +51,7 @@ async def at_handle(event: GroupMessageEvent) -> None:
         target_ids = {"all"}
     history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
     for target_id in target_ids:
-        cast(Dict[str, List[CaveNode]], history[target_id])[
+        cast(Dict[str, List[MessageNode]], history[target_id])[
             str(event.message_id)] = messages
     history.save()
 
@@ -60,7 +60,7 @@ async def at_handle(event: GroupMessageEvent) -> None:
 
     @matcher.handle()
     async def at_successor_handle(sub_event: GroupMessageEvent) -> None:
-        node: CaveNode = {
+        node: MessageNode = {
             "time": sub_event.time,
             "user_id": sub_event.user_id,
             "content": sub_event.raw_message
@@ -78,11 +78,11 @@ async def at_handle(event: GroupMessageEvent) -> None:
 @on_command("who-at-me", aliases={"wam"}).handle()
 async def who_at_me_handle(event: GroupMessageEvent) -> None:
     history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
-    messages = cast(List[List[CaveNode]],
+    messages = cast(List[List[MessageNode]],
                     list(history[str(event.user_id)].values()))
     messages += list(filter(
         lambda node: node[PREVIOUS_MESSAGE_COUNT]["user_id"] != event.user_id,
-        cast(List[List[CaveNode]], history["all"].values())
+        cast(List[List[MessageNode]], history["all"].values())
     ))
     messages.sort(
         key=lambda node: node[PREVIOUS_MESSAGE_COUNT]["time"], reverse=True)
