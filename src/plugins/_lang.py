@@ -1,5 +1,3 @@
-__all__ = ["text"]
-
 import os
 import re
 from typing import cast, Dict, Any, Match, Union, TypeAlias, Literal
@@ -43,11 +41,11 @@ def text(__lang: LangTag | UserID | MessageEvent, __key: str, **kwargs: Any) -> 
     try:
         data = gets(langs[lang], key)
     except KeyError:
-        lang = lang_use.factory()
-        data = gets(langs[lang], key)
+        lang = lang_use.default_factory()
+        data = gets(langs[cast(LangTag, lang)], key)
 
-    def repl(match_: Match[str]) -> str:
-        matched = match_.group()
+    def repl(match: Match[str]) -> str:
+        matched = match.group()
         expr = matched[2:-2]
         try:
             return str(eval(expr.strip(), {"__builtins__": None}, kwargs))

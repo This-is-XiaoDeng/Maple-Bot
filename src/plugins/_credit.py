@@ -1,5 +1,3 @@
-__all__ = ["credits"]
-
 from ._store import JsonDict
 
 

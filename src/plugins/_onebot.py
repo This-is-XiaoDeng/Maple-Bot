@@ -1,15 +1,14 @@
-__all__ = ["send_group_msg", "delete_msg"]
-
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from nonebot import get_bot
 from nonebot.adapters import Message, MessageSegment, MessageTemplate
-from nonebot.adapters.onebot.v11 import escape
+from typing import cast
 
 
 UserID = GroupID = MessageID = str | int
 AnyMessage = str | Message | MessageSegment | MessageTemplate
-ForwardNode = Dict[str, str | Dict[str, AnyMessage | Dict[str, AnyMessage]]]
+MessageType = Dict[str, int | str | Dict[str, int | str]]
+ForwardNode = Dict[str, str | Dict[str, AnyMessage | Dict[str, AnyMessage] | List["ForwardNode"]]]
 
 
 async def send_group_msg(group_id: GroupID, message: AnyMessage) -> MessageID:
@@ -34,27 +33,39 @@ async def get_group_member_info(
         no_cache=no_cache
     )
 
+async def get_stranger_info(
+    user_id: UserID,
+    no_cache: bool = False
+) -> Dict[str, str]:
+    return await get_bot().get_stranger_info(
+        user_id=int(user_id),
+        no_cache=no_cache
+    )
 
-def custom_forward_node(
-    name: str,
-    uin: UserID,
-    content: AnyMessage
+
+async def custom_forward_node(
+    user_id: UserID,
+    content: AnyMessage | List[ForwardNode],
+    name: Optional[str] = None,
+    group_id: Optional[GroupID] = None
 ) -> ForwardNode:
+    if name is None:
+        name = await get_user_name(user_id, group_id)
     return {
         "type": "node",
         "data": {
             "name": name,
-            "uin": str(uin),
-            "content": escape(str(content), escape_comma=False)
+            "uin": str(user_id),
+            "content": content
         }
     }
 
 
-def referencing_forward_node(id_: MessageID)-> ForwardNode:
+def referencing_forward_node(id: MessageID)-> ForwardNode:
     return {
         "type": "node",
         "data": {
-            "id": str(id_)
+            "id": str(id)
         }
     }
 
@@ -70,10 +81,22 @@ async def send_group_forward_msg(
 
 
 async def get_group_msg_history(
-    message_seq: MessageID,
-    group_id: GroupID
-) -> List[AnyMessage]:
-    return await get_bot().get_group_msg_history(
+    group_id: GroupID,
+    message_seq: Optional[MessageID] = None
+) -> List[MessageType]:
+    return (await get_bot().get_group_msg_history(
         message_seq=message_seq,
         group_id=int(group_id)
-    )
+    ))["messages"]
+
+
+async def get_user_name(
+    user_id: UserID,
+    group_id: Optional[GroupID] = None
+) -> str:
+    if group_id is None:
+        return (await get_stranger_info(user_id=int(user_id)))["nickname"]
+    else:
+        info = await get_group_member_info(group_id, user_id)
+        return info["card"] or info["nickname"]
+

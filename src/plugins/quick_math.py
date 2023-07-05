@@ -16,7 +16,7 @@ from ._rule import group
 
 
 @on_command("quick-math", aliases={"qm"}).handle()
-async def quick_math_handle(event: GroupMessageEvent):
+async def quick_math_handle(event: GroupMessageEvent) -> None:
     user_id = str(event.user_id)
     group_id = str(event.group_id)
     a = randint(1, 10)
@@ -40,7 +40,7 @@ async def quick_math_handle(event: GroupMessageEvent):
         temp=True,
         expire_time=timedelta(seconds=10)
     ).handle()
-    async def quick_math_answer_handle(matcher: Matcher):
+    async def quick_math_answer_handle(matcher: Matcher) -> None:
         credit = randint(1, 3)
         credits[user_id] += credit
         await matcher.send(text(

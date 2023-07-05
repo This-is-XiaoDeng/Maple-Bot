@@ -1,5 +1,3 @@
-__all__ = ["group"]
-
 from nonebot.rule import Rule
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 

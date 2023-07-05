@@ -15,7 +15,7 @@ async def lang_handle(
     matcher: Matcher,
     event: MessageEvent,
     arg: Message = CommandArg()
-):
+) -> None:
     user_id = str(event.user_id)
     match str(arg).lower().strip():
         case  "-l" | "list":

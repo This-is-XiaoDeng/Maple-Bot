@@ -2,56 +2,106 @@ import os
 import re
 from typing import cast, List, Dict
 
-from nonebot import on_command, on_regex
+from nonebot import on_command, on_regex, on_message
+from nonebot.typing import T_State
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 
+from ._rule import group
 from ._store import JsonDict
 from ._onebot import (
-    ForwardNode,
+    MessageType,
     send_group_forward_msg,
     get_group_member_info,
-    custom_forward_node
+    custom_forward_node,
+    get_group_msg_history,
+    get_user_name
 )
 
+
+CaveNode = Dict[str, str | int]
 
 AT_PATTERN = r"\[CQ:at,qq=(\d+|all)\]"
 
 
+def message_to_node(message: MessageType) -> CaveNode:
+    return {
+        "time": cast(int, message["time"]),
+        "user_id": cast(str, message["user_id"]),
+        "content": cast(str, message["message"])
+    }
+
+
 @on_regex(AT_PATTERN).handle()
 async def at_handle(event: GroupMessageEvent) -> None:
-    user_id = str(event.user_id)
-    group_id = str(event.group_id)
-    history = JsonDict(os.path.join("wam", f"{group_id}.json"), list)
-    info = await get_group_member_info(group_id, user_id)
-    node = {
+    messages = await get_group_msg_history(event.group_id)
+    messages = messages[-8:-1]
+    messages = list(map(message_to_node, messages))
+    node: CaveNode = {
         "time": event.time,
-        "id": event.message_id,
-        "name": info["card"] or info["nickname"],
-        "uin": user_id,
+        "user_id": event.user_id,
         "content": event.raw_message
     }
-    target_ids = set(re.findall(AT_PATTERN, node["content"]))
+    target_ids = set(re.findall(AT_PATTERN, cast(str, node["content"])))
+    messages.append(node)
     if "all" in target_ids:
-        target_ids = ["all"]
+        target_ids = {"all"}
+    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
     for target_id in target_ids:
-        cast(List, history[target_id]).append(node)
+        cast(Dict[str, List[CaveNode]], history[target_id])[
+            str(event.message_id)] = messages
     history.save()
+
+    message_count = 7
+    matcher = on_message(group(event.group_id))
+
+    @matcher.handle()
+    async def at_successor_handle(sub_event: GroupMessageEvent) -> None:
+        node: CaveNode = {
+            "time": sub_event.time,
+            "user_id": sub_event.user_id,
+            "content": sub_event.raw_message
+        }
+        history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+        for target_id in target_ids:
+            cast(Dict, history[target_id])[str(event.message_id)].append(node)
+        history.save()
+        nonlocal message_count
+        message_count -= 1
+        if message_count == 0:
+            matcher.destroy()
 
 
 @on_command("who-at-me", aliases={"wam"}).handle()
 async def who_at_me_handle(event: GroupMessageEvent) -> None:
-    user_id = str(event.user_id)
-    group_id = str(event.group_id)
-    history = JsonDict(os.path.join("wam", f"{group_id}.json"), list)
-    messages: List[ForwardNode] = history[user_id] + history["all"]
-    messages = list(filter(lambda node: node["uin"] != user_id, messages))
-    messages.sort(key=lambda node: cast(int, node["time"]), reverse=True)
-    messages = list(map(
-        lambda node: custom_forward_node(
-            name=cast(Dict[str, str], node)["name"],
-            uin=cast(Dict[str, str], node)["uin"],
-            content=cast(Dict[str, str], node)["content"]
-        ),
-        messages
+    history = JsonDict(os.path.join("wam", f"{event.group_id}.json"), dict)
+    messages = cast(List[List[CaveNode]],
+                    list(history[str(event.user_id)].values()))
+    messages += list(filter(
+        lambda node: node[7]["user_id"] != event.user_id,
+        cast(List[List[CaveNode]], history["all"].values())
     ))
-    await send_group_forward_msg(group_id, messages)
+    messages.sort(key=lambda node: node[7]["time"], reverse=True)
+
+    async def subs(content: str) -> str:
+        for matched in re.findall(AT_PATTERN, content):
+            content = content.replace(f"[CQ:at,qq={matched}]", "[@{}]".format(
+                "全体成员" if matched == "all"
+                else await get_user_name(matched, event.group_id)
+            ))
+        return content
+
+    await send_group_forward_msg(event.group_id, [
+        await custom_forward_node(
+            user_id=nodes[7]["user_id"],
+            group_id=event.group_id,
+            content=[
+                await custom_forward_node(
+                    user_id=cast(Dict[str, str], node)["user_id"],
+                    group_id=event.group_id,
+                    content=await subs(cast(Dict[str, str], node)["content"])
+                )
+                for node in nodes
+            ]
+        )
+        for nodes in messages
+    ])
