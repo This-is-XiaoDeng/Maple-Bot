@@ -10,7 +10,7 @@
 </div>
 
 ## Intro
-`ITCraftDevelopmentTeam/Maple-Bot`(hereinafter referred to as`Maple-Bot`)is a QQ bot which is based on `NoneBot2` and `OneBot 11`.
+`ITCraftDevelopmentTeam/Maple-Bot` (hereinafter referred to as `Maple-Bot` ) is a QQ bot which is based on `NoneBot2` and `OneBot 11`.
 
 ## Thanks
 - [IT Craft Development Team](https://itcdt.top)
