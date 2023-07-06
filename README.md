@@ -8,3 +8,4 @@
 ## 鸣谢
 - [IT Craft Development Team](https://itcdt.top)
 - [XDbot2](https://github.com/ITCraftDevelopmentTeam/XDbot2)
+- [VS Code](https://code.visualstudio.com/)
