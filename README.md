@@ -14,7 +14,6 @@
 
 ## 鸣谢
 - [IT Craft Development Team](https://itcdt.top)
-- [XDbot2](https://github.com/ITCraftDevelopmentTeam/XDbot2)
 - [Sugar](https://github.com/Monody-S/SugarWeb)
 - [VS Code](https://code.visualstudio.com/)
 - [NoneBot2](https://github.com/nonebot/nonebot2)
