@@ -14,10 +14,11 @@
 
 ## Thanks
 - [IT Craft Development Team](https://itcdt.top)
+- [XDbot2](https://github.com/ITCraftDevelopmentTeam/XDbot2)
 - [Sugar](https://github.com/Monody-S/SugarWeb)
 - [VS Code](https://code.visualstudio.com/)
 - [NoneBot2](https://github.com/nonebot/nonebot2)
-- [OneBot 11](11.onebot.dev)
+- [OneBot 11](https://11.onebot.dev)
 - [Contributors](https://github.com/ITCraftDevelopmentTeam/Maple-Bot/graphs/contributors)：
 
 <img src="https://contrib.rocks/image?repo=ITCraftDevelopmentTeam/Maple-Bot" />
